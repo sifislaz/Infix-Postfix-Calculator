@@ -1,39 +1,84 @@
 package calculator;
 import java.util.Stack;
+import gui.CalculatorGUI;
 
 public class InfixToPostfix {
 	
 	private static Stack<String> infixLL = new Stack<String>();
 	private static Stack<String> operatorsLL = new Stack<String>();
 	private static Stack<String> postfixLL = new Stack<String>();
-	private static String num = ""; 
+	private static String eq;
 	
-	public static void createNum(String str) {
-		num = num + str;
-	}
-	
-	public static void pushInfix(String op) {
-		if(op != "(" && op != "=" && num!="") {
-			infixLL.add(infixLL.size(), num);
-			infixLL.add(infixLL.size(), op);
-		}
-		else if(op == "=") {
-			if(num!="") {
-				infixLL.add(infixLL.size(), num);
+	public static void createInfix() {
+		String op="";
+		char pr = '\0';
+		eq = CalculatorGUI.returnText();  // retrieve expression
+		
+		for(int i = 0; i <eq.length(); i++) {
+			char ch = eq.charAt(i);  // get character
+			if(Character.isDigit(ch) || ch == '.') {
+				op += ch;  // rebuild operand
 			}
+			else {
+				if(op!="") infixLL.push(op);  // push operator
+				if(ch == '-' && (pr =='\0' || pr == '(')) infixLL.push("0");  // fix negative numbers at beginning or next to parentheses
+				if(ch == '+' && (pr =='\0' || pr == '(')) infixLL.push("0");  // fix positive numbers at beginning or next to parentheses
+				
+				infixLL.push(Character.toString(ch));  // push operator
+				op = "";
+			}
+			
+			pr = ch;
 		}
-		else {
-			infixLL.add(infixLL.size(), op);
+		if(op!="") {
+			infixLL.push(op);  // push last operand
 		}
 		
-		num = "";
 	}
 	
+	public static boolean expressionParser() {
+		eq = CalculatorGUI.returnText();
+		int parenthesesCounter = 0;  // counts the number of unresolved parentheses
+		boolean operatorFlag = false;  // true if the last character is operator
+		boolean dotFlag = false;  // true if the last character is '.'
+		char pr = '\0';  // the previous character
+		for(int i = 0; i < eq.length(); i++) {
+			char ch = eq.charAt(i);  // get current char
+			if(Character.isDigit(ch)) {  // if it is a number
+				if(operatorFlag) {
+					operatorFlag = false;  // drop operator flag
+					pr = ch;  // set previous character
+					continue;
+				}
+				else {
+					pr = ch;  // set previous character
+					continue;
+				}
+			}
+			else if(Character.isLetter(ch)) return false;  // if it's a letter show error
+			if(ch == '.' && !dotFlag) dotFlag = true;  // if . pressed, raise flag
+			else if(ch == '.' && dotFlag) return false;  // if . is pressed and the previous symbol is . show error
+			if(ch == '(') parenthesesCounter ++;  // if it's a left parenthesis, increase 
+			else if(ch == ')' && parenthesesCounter == 0) return false;  // if there are no open parentheses and it's a right one, show error
+			else if(ch == ')' && operatorFlag) return false;  // if it's a close parenthesis next to an operator, show error
+			else if(ch == ')') parenthesesCounter--;  // if it's a valid right parenthesis, decrease
+			if((ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^') && operatorFlag) return false;  // if it's an operator and the previous is an operator, show error
+			else if((ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^') && !operatorFlag) {
+				operatorFlag = true;  // if it's a valid operator, raise flag
+				dotFlag = false;  // number is finished
+			}
+			if(pr=='.' && !Character.isDigit(ch)) return false;  // if previous is dot and current isn't operand, show error
+			pr = ch;  // set previous equal to current character
+		}
+		if(!Character.isDigit(pr) && pr!=')') return false;  // if last isn't digit or close parenthesis, show error
+		if(parenthesesCounter != 0) return false;  // if there are open parentheses, show error
+		return true;  // else continue
+	}
 	public static void clearAll() {
 		infixLL.clear();
 		postfixLL.clear();
 		operatorsLL.clear();
-		num = "";
+		eq = "";
 	}
 	
 	public static void conversion() {
@@ -101,18 +146,10 @@ public class InfixToPostfix {
 					postfixLL.push(infixLL.get(counter));
 					counter++;
 				}
-				
-				System.out.println("PROCEDURE FOR " + counter + " TIME");
-				System.out.println("Operators1: " + operatorsLL);
-				System.out.println("Postfix1: " + postfixLL + "\n");
-				
 			}
 		}
 		
 		while(operatorsLL.size()>0) {
-			System.out.println("TAKING CARE OF THE OPERATORS");
-			System.out.println("Operators2: " + operatorsLL);
-			System.out.println("Postfix2: " + postfixLL + "\n");
 			if(operatorsLL.peek().equals("(")||
 			   operatorsLL.peek().equals(")")) {
 				operatorsLL.pop();
@@ -121,10 +158,11 @@ public class InfixToPostfix {
 				postfixLL.push(operatorsLL.pop());
 			}	
 		}
-		System.out.println("FINAL RESULT");
-		System.out.println("INFIX" + infixLL);
-		System.out.println("OPERATORS" + operatorsLL);
-		System.out.println("POSTFIX: " + postfixLL + "\n");
 		infixLL.clear();
+	}
+	
+	
+	public static Stack<String> getPostfix(){
+		return postfixLL;
 	}
 }

@@ -15,21 +15,20 @@ public class CalculatorGUI extends JFrame{
 										 {"0", ".", "^", "="}};
 	protected static boolean equalFlag = false;
 	
-	protected static JLabel label;
+	protected static JTextField text;
 	public CalculatorGUI() {
 		super("Infix Notation Calculator");  // Create the frame
 		JPanel framePanel = new JPanel(new BorderLayout(0,5));  // Create the main container
 		JPanel buttonsPanel = buttonsCreator();  // Create the buttons panel and the buttons
-		JPanel labelPanel = new JPanel();  // Create the screen panel
 		framePanel.setPreferredSize(new Dimension(283,320));
-		// Set the label features
-		label = new JLabel("0", SwingConstants.LEFT);
-		label.setFont(new Font("Calibri",Font.PLAIN, 15));
-		label.setBackground(Color.WHITE);
-		label.setForeground(Color.BLACK);
-		label.setHorizontalTextPosition(SwingConstants.LEFT);
-		labelPanel.add(label);  // Add the label to the panel
-		framePanel.add(labelPanel,BorderLayout.NORTH);  // Add the label panel to the main panel
+		// Set the text features
+		text = new JTextField("");
+		text.setFont(new Font("Calibri",Font.PLAIN, 15));
+		text.setBackground(Color.WHITE);
+		text.setForeground(Color.BLACK);
+		text.setHorizontalAlignment(JTextField.LEFT);
+		text.addActionListener(new TextfieldListener());
+		framePanel.add(text,BorderLayout.NORTH);  // Add the text panel to the main panel
 		framePanel.add(buttonsPanel, BorderLayout.CENTER);  // Add the buttons panel to the main panel
 		// Set the frame features
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -66,70 +65,85 @@ public class CalculatorGUI extends JFrame{
 		return p1;  // return the panel
 	}
 	
+	
+	public static String returnText() {
+		return text.getText();  // send textfield's expression
+	}
+}
+
+class TextfieldListener implements ActionListener{
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if(!InfixToPostfix.expressionParser()) {  // check for errors
+			new ErrorWindow();  // if there are errors, throw a message
+		}
+		else {
+			InfixToPostfix.createInfix();  // create infix stack
+			InfixToPostfix.conversion();  // convert to postfix stack
+			calculator.PostfixCalculation.calculateResult();  // calculate the result
+			CalculatorGUI.text.setText(Double.toString(calculator.PostfixCalculation.getResult()));  // print the result
+		}
+	}
 }
 
 class ButtonHandler implements ActionListener{
 	String name;
 	
 	public ButtonHandler(String x) {
-		name = x;
+		name = x;  // Get the button
 	}
+	@Override
 	public void actionPerformed(ActionEvent e) {
-		if(CalculatorGUI.equalFlag) {
-			CalculatorGUI.label.setText("0");
-			InfixToPostfix.clearAll();
-			CalculatorGUI.equalFlag = false;
-		}
 		switch(name) {
-		case "C":
-			CalculatorGUI.label.setText("0");
-			InfixToPostfix.clearAll();
+		
+		case "C":  // if C pressed
+			CalculatorGUI.text.setText("");  // clear screen
+			InfixToPostfix.clearAll();  // erase everything
 			break;
-		case "+":
-			CalculatorGUI.label.setText(CalculatorGUI.label.getText()+"+");
-			InfixToPostfix.pushInfix(name);
+			
+		case "+":  // if + is pressed
+			CalculatorGUI.text.setText(CalculatorGUI.text.getText()+"+");  // print +
 			break;
+			
 		case "-":
-			CalculatorGUI.label.setText(CalculatorGUI.label.getText()+"-");
-			InfixToPostfix.pushInfix(name);
+			CalculatorGUI.text.setText(CalculatorGUI.text.getText()+"-");  // print -
 			break;
+			
 		case "*":
-			CalculatorGUI.label.setText(CalculatorGUI.label.getText()+"*");
-			InfixToPostfix.pushInfix(name);
+			CalculatorGUI.text.setText(CalculatorGUI.text.getText()+"*");  // print *
 			break;
+			
 		case "/":
-			CalculatorGUI.label.setText(CalculatorGUI.label.getText()+"/");
-			InfixToPostfix.pushInfix(name);
+			CalculatorGUI.text.setText(CalculatorGUI.text.getText()+"/");  // print /
 			break;
+			
 		case "^":
-			CalculatorGUI.label.setText(CalculatorGUI.label.getText()+"^");
-			InfixToPostfix.pushInfix(name);
+			CalculatorGUI.text.setText(CalculatorGUI.text.getText()+"^");  // print ^
 			break;
-		case "=":
-//			CalculatorGUI.label.setText(CalculatorGUI.label.getText()+"=");
-			CalculatorGUI.equalFlag = true;
-			InfixToPostfix.pushInfix(name);
-			InfixToPostfix.conversion();
-			break;
-		case "(":
-			if(CalculatorGUI.label.getText()=="0"){
-				CalculatorGUI.label.setText(name);
-			}else {
-				CalculatorGUI.label.setText(CalculatorGUI.label.getText()+name);
+			
+		case "=":  // if = is pressed
+			if(!InfixToPostfix.expressionParser()) {  // check for errors
+				new ErrorWindow();  // if an error exists, throw message
 			}
-			InfixToPostfix.pushInfix(name);
+			else {
+				InfixToPostfix.createInfix();  // create infix
+				InfixToPostfix.conversion();  // convert to postfix
+				calculator.PostfixCalculation.calculateResult();  // calculate result
+				CalculatorGUI.text.setText(Double.toString(calculator.PostfixCalculation.getResult()));  // print result
+			}
+			
 			break;
+
+		case "(":  // if ( pressed
+				CalculatorGUI.text.setText(CalculatorGUI.text.getText()+name);  // print (
+			break;
+			
 		case ")":
-			CalculatorGUI.label.setText(CalculatorGUI.label.getText()+name);
-			InfixToPostfix.pushInfix(name);
+			CalculatorGUI.text.setText(CalculatorGUI.text.getText()+name);  // print )
 			break;
+			
 		default:
-			if(CalculatorGUI.label.getText()=="0"&& name!=".") {
-				CalculatorGUI.label.setText(name);
-			}else {
-				CalculatorGUI.label.setText(CalculatorGUI.label.getText()+name);
-			}
-			InfixToPostfix.createNum(name);
+			CalculatorGUI.text.setText(CalculatorGUI.text.getText()+name);
 			break;
 		}
 		
